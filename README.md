@@ -1,4 +1,3 @@
-# Frontend Test - Traffic Report Application
 
 Aplikasi ini dibangun dengan Next.js 15, menggunakan Domain-Driven Design (DDD), Atomic Design Pattern, dan responsive design.
 
