@@ -1,4 +1,3 @@
-// components/Header.tsx
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -25,10 +24,8 @@ export default function Header({ onMenuClick, isMenuOpen }: HeaderProps) {
       setTimeUntilExpiration(timeStr);
     };
 
-    // Update immediately
     updateTimeDisplay();
 
-    // Update every minute
     const interval = setInterval(updateTimeDisplay, 60000);
 
     return () => clearInterval(interval);
@@ -44,9 +41,7 @@ export default function Header({ onMenuClick, isMenuOpen }: HeaderProps) {
 
   return (
     <header className="bg-white shadow-sm p-4 flex justify-between items-center">
-      {/* Bagian Kiri Header */}
       <div className="flex items-center gap-4">
-        {/* Hamburger Menu untuk Mobile */}
         <button
           onClick={onMenuClick}
           className="lg:hidden p-2 rounded-md hover:bg-gray-100 transition-colors"
@@ -56,9 +51,7 @@ export default function Header({ onMenuClick, isMenuOpen }: HeaderProps) {
         </button>
       </div>
 
-      {/* Bagian Kanan Header */}
       <div className="flex items-center space-x-2 lg:space-x-4">
-        {/* Token Expiration Info - Hidden on mobile */}
         {timeUntilExpiration && (
           <div className="hidden md:flex items-center gap-2 text-gray-600">
             <Clock size={16} />
@@ -68,13 +61,11 @@ export default function Header({ onMenuClick, isMenuOpen }: HeaderProps) {
           </div>
         )}
 
-        {/* User Info */}
         <div className="flex items-center gap-2 text-gray-700">
           <User size={20} />
           <span className="hidden sm:block text-sm font-medium">{username || 'User'}</span>
         </div>
 
-        {/* Logout Button */}
         <button
           onClick={handleLogoutClick}
           className="flex items-center gap-2 px-2 lg:px-4 py-2 text-red-600 hover:bg-red-50 rounded-md transition-colors"
@@ -85,7 +76,6 @@ export default function Header({ onMenuClick, isMenuOpen }: HeaderProps) {
         </button>
       </div>
 
-      {/* Confirm Logout Modal */}
       <ConfirmModal
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}

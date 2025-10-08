@@ -25,7 +25,8 @@ export class UserRepositoryImpl implements UserRepository {
 
       return user;
     } catch (error) {
-      throw new Error(`Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Re-throw the original error so ErrorHandler can process it properly
+      throw error;
     }
   }
 

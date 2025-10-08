@@ -1,8 +1,8 @@
-// components/Sidebar.tsx
 "use client";
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, BarChart3, Settings, ChevronDown } from 'lucide-react';
 
@@ -17,7 +17,6 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile Overlay */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -25,19 +24,24 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
         />
       )}
 
-      {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50 w-64 bg-gray-800 text-white p-5
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:flex-shrink-0
       `}>
-        <div className="text-2xl font-bold mb-10">
-          Aplikasi
+        <div className="mb-10 flex justify-center">
+          <Image
+            src="/logo.png"
+            alt="Logo"
+            width={60}
+            height={40}
+            className="object-contain"
+            priority
+          />
         </div>
         <nav>
           <ul>
-            {/* Dashboard */}
             <li>
               <Link
                 href="/dashboard"
@@ -50,7 +54,6 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
               </Link>
             </li>
 
-            {/* Laporan Lalin - Dropdown */}
             <li>
               <button
                 onClick={() => setIsLaporanOpen(!isLaporanOpen)}
@@ -67,7 +70,6 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
                 />
               </button>
 
-              {/* Submenu */}
               {isLaporanOpen && (
                 <ul className="ml-4 mt-1">
                   <li>
@@ -84,7 +86,6 @@ export default function Sidebar({ isOpen = true, onClose }: SidebarProps) {
               )}
             </li>
 
-            {/* Master Gerbang */}
             <li>
               <Link
                 href="/master-gerbang"

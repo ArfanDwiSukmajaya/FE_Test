@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Sidebar from '@/presentation/components/organisms/Sidebar';
 import Header from '@/presentation/components/organisms/Header';
-import { Toaster } from 'react-hot-toast';
 
 export default function PrivateLayout({
   children,
@@ -54,7 +53,6 @@ export default function PrivateLayout({
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Toaster position="top-center" />
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
       <div className="flex flex-col flex-1 lg:ml-0">
         <Header onMenuClick={toggleSidebar} isMenuOpen={isSidebarOpen} />

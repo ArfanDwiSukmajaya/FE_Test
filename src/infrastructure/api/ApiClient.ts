@@ -17,6 +17,14 @@ export interface ApiError {
   data?: [];
 }
 
+export interface CustomApiError extends Error {
+  response?: {
+    status: number;
+    statusText: string;
+    data: unknown;
+  };
+}
+
 export class ApiClient {
   private baseURL: string;
   private timeout: number;
@@ -52,7 +60,14 @@ export class ApiClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        // Create error object that ErrorHandler can process
+        const error: CustomApiError = new Error('API Error');
+        error.response = {
+          status: response.status,
+          statusText: response.statusText,
+          data: await response.json().catch(() => ({}))
+        };
+        throw error;
       }
 
       const data = await response.json();

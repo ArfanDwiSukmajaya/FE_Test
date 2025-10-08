@@ -17,12 +17,55 @@ export class ErrorHandler {
 
   static handleApiError(error: unknown): AppError {
     if (error && typeof error === 'object' && 'response' in error) {
+      const response = (error as { response?: { status?: number; data?: { message?: string } } }).response;
+      const status = response?.status;
+      const message = response?.data?.message;
+
+      // Handle specific HTTP status codes
+      if (status === 401) {
+        return this.createError(
+          'AUTH_ERROR',
+          'Username atau password salah',
+          {
+            status,
+            data: response?.data
+          }
+        );
+      } else if (status === 403) {
+        return this.createError(
+          'AUTH_ERROR',
+          'Akses ditolak. Anda tidak memiliki izin untuk mengakses sistem ini.',
+          {
+            status,
+            data: response?.data
+          }
+        );
+      } else if (status === 404) {
+        return this.createError(
+          'API_ERROR',
+          'Endpoint tidak ditemukan. Silakan hubungi administrator.',
+          {
+            status,
+            data: response?.data
+          }
+        );
+      } else if (status && status >= 500) {
+        return this.createError(
+          'API_ERROR',
+          'Server sedang bermasalah. Silakan coba lagi nanti.',
+          {
+            status,
+            data: response?.data
+          }
+        );
+      }
+
       return this.createError(
         'API_ERROR',
-        (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Server error occurred',
+        message || 'Server error occurred',
         {
-          status: (error as { response?: { status?: number } }).response?.status,
-          data: (error as { response?: { data?: unknown } }).response?.data
+          status,
+          data: response?.data
         }
       );
     } else if (error && typeof error === 'object' && 'request' in error) {
@@ -57,15 +100,23 @@ export class ErrorHandler {
   }
 
   static logError(error: AppError): void {
-    console.error('Application Error:', {
-      code: error.code,
-      message: error.message,
-      details: error.details,
-      timestamp: error.timestamp
-    });
+    // Log error in development only
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Application Error:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        timestamp: error.timestamp
+      });
+    }
   }
 
   static getUserFriendlyMessage(error: AppError): string {
+    // Return the specific message from the error if available
+    if (error.message && error.message !== 'An unknown error occurred') {
+      return error.message;
+    }
+
     switch (error.code) {
       case 'API_ERROR':
         return 'Terjadi kesalahan pada server. Silakan coba lagi.';
@@ -74,7 +125,7 @@ export class ErrorHandler {
       case 'VALIDATION_ERROR':
         return (error.details as { errors?: string[] })?.errors?.join(', ') || 'Data yang dimasukkan tidak valid.';
       case 'AUTH_ERROR':
-        return 'Sesi Anda telah berakhir. Silakan login kembali.';
+        return 'Username atau password salah. Silakan periksa kembali.';
       default:
         return 'Terjadi kesalahan yang tidak diketahui. Silakan coba lagi.';
     }
