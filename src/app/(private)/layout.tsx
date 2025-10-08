@@ -3,8 +3,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
-import Header from '@/components/Header';
+import Sidebar from '@/presentation/components/ui/Sidebar';
+import Header from '@/presentation/components/ui/Header';
 import { Toaster } from 'react-hot-toast';
 
 export default function PrivateLayout({

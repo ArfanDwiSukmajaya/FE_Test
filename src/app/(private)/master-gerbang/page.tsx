@@ -3,8 +3,8 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import GerbangModal, { GerbangFormData } from '@/components/GerbangModal';
-import ConfirmModal from '@/components/ConfirmModal';
+import GerbangModal, { GerbangFormData } from '@/presentation/components/ui/GerbangModal';
+import ConfirmModal from '@/presentation/components/ui/ConfirmModal';
 import { FilePenLine, Trash2, Eye } from 'lucide-react';
 
 export interface Gerbang {

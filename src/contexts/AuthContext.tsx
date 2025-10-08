@@ -1,8 +1,8 @@
-// contexts/AuthContext.tsx
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { JwtUtils } from '@/shared/utils/JwtUtils';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -10,6 +10,8 @@ interface AuthContextType {
   token: string | null;
   login: (token: string, username: string) => void;
   logout: () => void;
+  isTokenExpired: () => boolean;
+  getTimeUntilExpiration: () => number;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,13 +31,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
 
     if (storedToken && isLoggedIn === 'true') {
-      setIsAuthenticated(true);
-      setUsername(storedUsername);
-      setToken(storedToken);
+      // Cek apakah token sudah expired
+      if (JwtUtils.isTokenExpired(storedToken)) {
+        // Token expired, clear storage dan logout
+        localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        localStorage.removeItem('isLoggedIn');
+        setIsAuthenticated(false);
+        setUsername(null);
+        setToken(null);
+        router.push('/login');
+      } else {
+        // Token masih valid
+        setIsAuthenticated(true);
+        setUsername(storedUsername);
+        setToken(storedToken);
+      }
     }
 
     setLoading(false);
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     // Redirect logic - hanya handle redirect dari login ke dashboard
@@ -54,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(true);
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     localStorage.removeItem('isLoggedIn');
@@ -62,6 +77,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUsername(null);
     setIsAuthenticated(false);
     router.push('/login');
+  }, [router]);
+
+  // Simple JWT expiration - set timeout once based on exact expiration time
+  useEffect(() => {
+    if (!isAuthenticated || !token) return;
+
+    // Get exact expiration time from JWT
+    const payload = JwtUtils.decodeToken(token);
+    if (!payload) {
+      logout();
+      return;
+    }
+
+    const expirationTime = payload.exp * 1000; // Convert to milliseconds
+    const now = Date.now();
+    const timeUntilExpiration = expirationTime - now;
+
+    // If already expired, logout immediately
+    if (timeUntilExpiration <= 0) {
+      logout();
+      return;
+    }
+
+    // Set single timeout to logout exactly when token expires
+    const timeoutId = setTimeout(() => {
+      logout();
+    }, timeUntilExpiration);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [isAuthenticated, token, logout]);
+
+  // Check token saat user kembali ke tab
+  useEffect(() => {
+    if (!isAuthenticated || !token) return;
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden && token) {
+        if (JwtUtils.isTokenExpired(token)) {
+          logout();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isAuthenticated, token, logout]);
+
+  const isTokenExpired = () => {
+    if (!token) return true;
+    return JwtUtils.isTokenExpired(token);
+  };
+
+  const getTimeUntilExpiration = () => {
+    if (!token) return 0;
+    return JwtUtils.getTimeUntilExpiration(token);
   };
 
   if (loading) {
@@ -76,7 +148,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, username, token, login, logout }}>
+    <AuthContext.Provider value={{
+      isAuthenticated,
+      username,
+      token,
+      login,
+      logout,
+      isTokenExpired,
+      getTimeUntilExpiration
+    }}>
       {children}
     </AuthContext.Provider>
   );

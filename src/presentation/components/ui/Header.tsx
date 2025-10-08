@@ -1,14 +1,33 @@
 // components/Header.tsx
 "use client";
 
-import { useState } from 'react';
-import { User, LogOut } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, LogOut, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import ConfirmModal from './ConfirmModal';
+import { JwtUtils } from '../../../shared/utils/JwtUtils';
 
 export default function Header() {
-  const { username, logout } = useAuth();
+  const { username, logout, token } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [timeUntilExpiration, setTimeUntilExpiration] = useState<string>('');
+
+  useEffect(() => {
+    if (!token) return;
+
+    const updateTimeDisplay = () => {
+      const timeStr = JwtUtils.formatTimeUntilExpiration(token);
+      setTimeUntilExpiration(timeStr);
+    };
+
+    // Update immediately
+    updateTimeDisplay();
+
+    // Update every minute
+    const interval = setInterval(updateTimeDisplay, 60000);
+
+    return () => clearInterval(interval);
+  }, [token]);
 
   const handleLogoutClick = () => {
     setShowLogoutModal(true);
@@ -27,6 +46,16 @@ export default function Header() {
 
       {/* Bagian Kanan Header */}
       <div className="flex items-center space-x-4">
+        {/* Token Expiration Info */}
+        {timeUntilExpiration && (
+          <div className="flex items-center gap-2 text-gray-600">
+            <Clock size={16} />
+            <span className="text-xs">
+              Session: {timeUntilExpiration}
+            </span>
+          </div>
+        )}
+
         {/* User Info */}
         <div className="flex items-center gap-2 text-gray-700">
           <User size={20} />

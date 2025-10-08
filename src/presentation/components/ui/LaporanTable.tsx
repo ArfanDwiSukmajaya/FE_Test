@@ -2,7 +2,24 @@
 "use client";
 
 import { useMemo } from 'react';
-import type { ProcessedDataRow } from '@/app/(private)/laporan-lalin/laporan-per-hari/page';
+
+export interface ProcessedDataRow {
+  Ruas: string;
+  Gerbang: string;
+  Gardu: number;
+  Tanggal: string;
+  Hari: string;
+  Gol: {
+    [key: number]: {
+      Tunai: number;
+      KTP: number;
+      Flo: number;
+      EToll: number;
+      Keseluruhan: number;
+      ETF: number;
+    };
+  };
+}
 
 interface LaporanTableProps {
   data: ProcessedDataRow[];
@@ -104,7 +121,7 @@ export default function LaporanTable({
           <tbody>
             {dataWithTotals.map((row, index) => {
               if (row.type === 'data') {
-                const totalLalin = [1, 2, 3, 4, 5].reduce((sum, gol) => sum + (row.Gol[gol]?.[activeTab] ?? 0), 0);
+                const totalLalin = [1, 2, 3, 4, 5].reduce((sum, gol) => sum + ((row.Gol[gol]?.[activeTab] as number) ?? 0), 0);
                 return (
                   <tr key={`data-${index}`} className="hover:bg-gray-50">
                     <td className="py-2 px-3 border-b">{index + 1}</td>
