@@ -122,93 +122,114 @@ export default function LaporanTable({
         </button>
       </div>
 
-      <div className="bg-white shadow-sm rounded-lg border border-gray-200">
-        <BaseTable
-          columns={[
-            { key: 'no', label: 'No', align: 'left' },
-            { key: 'ruas', label: 'Ruas', align: 'left' },
-            { key: 'gerbang', label: 'Gerbang', align: 'left' },
-            { key: 'gardu', label: 'Gardu', align: 'left' },
-            { key: 'hari', label: 'Hari', align: 'left' },
-            { key: 'tanggal', label: 'Tanggal', align: 'left' },
-            { key: 'metode', label: 'Metode Pembayaran', align: 'left' },
-            { key: 'gol1', label: 'Gol I', align: 'center' },
-            { key: 'gol2', label: 'Gol II', align: 'center' },
-            { key: 'gol3', label: 'Gol III', align: 'center' },
-            { key: 'gol4', label: 'Gol IV', align: 'center' },
-            { key: 'gol5', label: 'Gol V', align: 'center' },
-            { key: 'total', label: 'Total Lalin', align: 'center' }
-          ]}
-          data={dataWithTotals.map((row, index) => {
-            if (row.type === 'data') {
-              const totalLalin = [1, 2, 3, 4, 5].reduce((sum, gol) => sum + ((row.Gol[gol]?.[activeTab] as number) ?? 0), 0);
-              return {
-                no: index + 1,
-                ruas: row.Ruas,
-                gerbang: row.Gerbang,
-                gardu: row.Gardu,
-                hari: row.Hari,
-                tanggal: row.Tanggal,
-                metode: methodDisplayNames[activeTab],
-                gol1: row.Gol[1]?.[activeTab] ?? 0,
-                gol2: row.Gol[2]?.[activeTab] ?? 0,
-                gol3: row.Gol[3]?.[activeTab] ?? 0,
-                gol4: row.Gol[4]?.[activeTab] ?? 0,
-                gol5: row.Gol[5]?.[activeTab] ?? 0,
-                total: totalLalin
-              };
-            }
-            if (row.type === 'subtotal' || row.type === 'grandtotal') {
-              return {
-                no: row.type === 'subtotal' ? `Total Lalin ${row.ruas}` : 'Total Lalin Keseluruhan',
-                ruas: '',
-                gerbang: '',
-                gardu: '',
-                hari: '',
-                tanggal: '',
-                metode: '',
-                gol1: row.totals.gol1,
-                gol2: row.totals.gol2,
-                gol3: row.totals.gol3,
-                gol4: row.totals.gol4,
-                gol5: row.totals.gol5,
-                total: row.totals.total
-              };
-            }
-            return {};
-          })}
-          renderRow={(row, index) => {
-            const originalRow = dataWithTotals[index];
+      {/* Mobile Incompatible Message */}
+      <div className="lg:hidden">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <div className="flex flex-col items-center space-y-4">
+            <svg className="w-12 h-12 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <div>
+              <h3 className="text-lg font-semibold text-yellow-800 mb-2">Menu Tidak Compatible</h3>
+              <p className="text-yellow-700">
+                Menu laporan lalin tidak dapat ditampilkan dengan optimal pada ukuran layar mobile.
+                Silakan akses melalui desktop atau tablet untuk pengalaman terbaik.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            if (originalRow.type === 'data') {
-              const totalLalin = [1, 2, 3, 4, 5].reduce((sum, gol) => sum + ((originalRow.Gol[gol]?.[activeTab] as number) ?? 0), 0);
-              return (
-                <tr key={`data-${index}`} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{originalRow.Ruas}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{originalRow.Gerbang}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{originalRow.Gardu}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{originalRow.Hari}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{originalRow.Tanggal}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{methodDisplayNames[activeTab]}</td>
-                  {[1, 2, 3, 4, 5].map(gol => <td key={gol} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{originalRow.Gol[gol]?.[activeTab] ?? 0}</td>)}
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">{totalLalin}</td>
-                </tr>
-              );
-            }
+      {/* Desktop Table View */}
+      <div className="hidden lg:block">
+        <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+          <BaseTable
+            columns={[
+              { key: 'no', label: 'No', align: 'left' },
+              { key: 'ruas', label: 'Ruas', align: 'left' },
+              { key: 'gerbang', label: 'Gerbang', align: 'left' },
+              { key: 'gardu', label: 'Gardu', align: 'left' },
+              { key: 'hari', label: 'Hari', align: 'left' },
+              { key: 'tanggal', label: 'Tanggal', align: 'left' },
+              { key: 'metode', label: 'Metode Pembayaran', align: 'left' },
+              { key: 'gol1', label: 'Gol I', align: 'center' },
+              { key: 'gol2', label: 'Gol II', align: 'center' },
+              { key: 'gol3', label: 'Gol III', align: 'center' },
+              { key: 'gol4', label: 'Gol IV', align: 'center' },
+              { key: 'gol5', label: 'Gol V', align: 'center' },
+              { key: 'total', label: 'Total Lalin', align: 'center' }
+            ]}
+            data={dataWithTotals.map((row, index) => {
+              if (row.type === 'data') {
+                const totalLalin = [1, 2, 3, 4, 5].reduce((sum, gol) => sum + ((row.Gol[gol]?.[activeTab] as number) ?? 0), 0);
+                return {
+                  no: index + 1,
+                  ruas: row.Ruas,
+                  gerbang: row.Gerbang,
+                  gardu: row.Gardu,
+                  hari: row.Hari,
+                  tanggal: row.Tanggal,
+                  metode: methodDisplayNames[activeTab],
+                  gol1: row.Gol[1]?.[activeTab] ?? 0,
+                  gol2: row.Gol[2]?.[activeTab] ?? 0,
+                  gol3: row.Gol[3]?.[activeTab] ?? 0,
+                  gol4: row.Gol[4]?.[activeTab] ?? 0,
+                  gol5: row.Gol[5]?.[activeTab] ?? 0,
+                  total: totalLalin
+                };
+              }
+              if (row.type === 'subtotal' || row.type === 'grandtotal') {
+                return {
+                  no: row.type === 'subtotal' ? `Total Lalin ${row.ruas}` : 'Total Lalin Keseluruhan',
+                  ruas: '',
+                  gerbang: '',
+                  gardu: '',
+                  hari: '',
+                  tanggal: '',
+                  metode: '',
+                  gol1: row.totals.gol1,
+                  gol2: row.totals.gol2,
+                  gol3: row.totals.gol3,
+                  gol4: row.totals.gol4,
+                  gol5: row.totals.gol5,
+                  total: row.totals.total
+                };
+              }
+              return {};
+            })}
+            renderRow={(row, index) => {
+              const originalRow = dataWithTotals[index];
 
-            if (originalRow.type === 'subtotal' || originalRow.type === 'grandtotal') {
-              return (
-                <tr key={originalRow.type === 'subtotal' ? `sub-${originalRow.ruas}` : 'grandtotal'} className={originalRow.type === 'grandtotal' ? "bg-gray-700 text-white font-bold" : "bg-gray-200 font-bold"}>
-                  <td colSpan={7} className="px-6 py-4 whitespace-nowrap text-sm text-center">{originalRow.type === 'subtotal' ? `Total Lalin ${originalRow.ruas}` : 'Total Lalin Keseluruhan'}</td>
-                  {Object.values(originalRow.totals).map((val, i) => <td key={i} className="px-6 py-4 whitespace-nowrap text-sm text-center">{val}</td>)}
-                </tr>
-              );
-            }
+              if (originalRow.type === 'data') {
+                const totalLalin = [1, 2, 3, 4, 5].reduce((sum, gol) => sum + ((originalRow.Gol[gol]?.[activeTab] as number) ?? 0), 0);
+                return (
+                  <tr key={`data-${index}`} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{index + 1}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{originalRow.Ruas}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{originalRow.Gerbang}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{originalRow.Gardu}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{originalRow.Hari}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{originalRow.Tanggal}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{methodDisplayNames[activeTab]}</td>
+                    {[1, 2, 3, 4, 5].map(gol => <td key={gol} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">{originalRow.Gol[gol]?.[activeTab] ?? 0}</td>)}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-center">{totalLalin}</td>
+                  </tr>
+                );
+              }
 
-            return null;
-          }}
-        />
+              if (originalRow.type === 'subtotal' || originalRow.type === 'grandtotal') {
+                return (
+                  <tr key={originalRow.type === 'subtotal' ? `sub-${originalRow.ruas}` : 'grandtotal'} className={originalRow.type === 'grandtotal' ? "bg-gray-700 text-white font-bold" : "bg-gray-200 font-bold"}>
+                    <td colSpan={7} className="px-6 py-4 whitespace-nowrap text-sm text-center">{originalRow.type === 'subtotal' ? `Total Lalin ${originalRow.ruas}` : 'Total Lalin Keseluruhan'}</td>
+                    {Object.values(originalRow.totals).map((val, i) => <td key={i} className="px-6 py-4 whitespace-nowrap text-sm text-center">{val}</td>)}
+                  </tr>
+                );
+              }
+
+              return null;
+            }}
+          />
+        </div>
       </div>
     </div>
   );
