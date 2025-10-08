@@ -1,4 +1,3 @@
-// application/use-cases/ReportUseCase.ts
 import { LalinRepository, LalinFilters } from '../../domain/repositories/LalinRepository';
 import { PaginationParams } from '../../domain/repositories/GerbangRepository';
 import { PaymentMethod } from '../../domain/value-objects/PaymentMethod';
@@ -45,12 +44,10 @@ export class ReportUseCase {
     currentPage: number;
   }>> {
     try {
-      // Sanitize search input
       if (filters.search) {
         filters.search = ValidationUtils.sanitizeString(filters.search);
       }
 
-      // Validate date if provided
       if (filters.tanggal) {
         const dateErrors = ValidationUtils.validateDate(filters.tanggal);
         if (dateErrors.length > 0) {
@@ -105,17 +102,14 @@ export class ReportUseCase {
 
       const doc = new jsPDF('landscape', 'mm', 'a4');
 
-      // Header
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.text('Laporan Lalu Lintas Per Hari', 14, 20);
 
-      // Tanggal laporan
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
       doc.text(`Tanggal: ${filters.tanggal || new Date().toISOString().split('T')[0]}`, 14, 30);
 
-      // Data untuk tabel
       const tableData = data.map((row, index) => {
         const getValue = (gol: number) => {
           const golData = row.Gol[gol];
@@ -142,13 +136,11 @@ export class ReportUseCase {
         ];
       });
 
-      // Kolom headers
       const headers = [
         'No.', 'Ruas', 'Gerbang', 'Gardu', 'Hari', 'Tanggal',
         'Metode Pembayaran', 'Gol I', 'Gol II', 'Gol III', 'Gol IV', 'Gol V', 'Total Lalin'
       ];
 
-      // Buat tabel
       autoTable(doc, {
         head: [headers],
         body: tableData,
@@ -165,7 +157,6 @@ export class ReportUseCase {
         }
       });
 
-      // Footer
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
@@ -202,6 +193,7 @@ export class ReportUseCase {
       NamaCabang: string;
     }>
   ): ProcessedReportData[] {
+
     const gerbangMap = new Map<string, { ruas: string; gerbang: string }>();
 
     gerbangList.forEach(g => {
@@ -210,9 +202,13 @@ export class ReportUseCase {
     });
 
     const groupedData = new Map<string, ProcessedReportData>();
+    const uniqueKeys = new Set<string>();
 
-    lalinList.forEach(lalin => {
+    lalinList.forEach((lalin) => {
+      // const key = `${lalin.IdCabang}-${lalin.IdGerbang}-${lalin.IdGardu}-${lalin.Tanggal}-${lalin.Golongan}`;
       const key = `${lalin.IdCabang}-${lalin.IdGerbang}-${lalin.IdGardu}-${lalin.Tanggal}`;
+      uniqueKeys.add(key);
+
       const gerbangInfo = gerbangMap.get(`${lalin.IdCabang}-${lalin.IdGerbang}`);
 
       if (!gerbangInfo) return;
@@ -242,14 +238,18 @@ export class ReportUseCase {
       }
 
       const gol = existing.Gol[lalin.Golongan as number];
+
+      const eTollValue = ((lalin.eMandiri as number) + (lalin.eBri as number) + (lalin.eBni as number) + (lalin.eBca as number) + (lalin.eNobu as number) + (lalin.eDKI as number) + (lalin.eMega as number));
+
       gol.Tunai += lalin.Tunai as number;
       gol.KTP += ((lalin.DinasOpr as number) + (lalin.DinasMitra as number) + (lalin.DinasKary as number));
       gol.Flo += lalin.eFlo as number;
-      gol.EToll += ((lalin.eMandiri as number) + (lalin.eBri as number) + (lalin.eBni as number) + (lalin.eBca as number) + (lalin.eNobu as number) + (lalin.eDKI as number) + (lalin.eMega as number));
+      gol.EToll += eTollValue;
       gol.Keseluruhan += (gol.Tunai + gol.KTP + gol.Flo + gol.EToll) as number;
       gol.ETF += (gol.EToll + gol.Tunai + gol.Flo) as number;
-    });
 
-    return Array.from(groupedData.values());
+    });
+    const result = Array.from(groupedData.values());
+    return result;
   }
 }

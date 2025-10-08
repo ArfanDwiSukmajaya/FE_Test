@@ -1,4 +1,3 @@
-// infrastructure/repositories/LalinRepositoryImpl.ts
 import { LalinEntity } from '../../domain/entities/Lalin';
 import { LalinRepository, LalinFilters } from '../../domain/repositories/LalinRepository';
 import { PaginationParams, PaginatedResponse } from '../../domain/repositories/GerbangRepository';

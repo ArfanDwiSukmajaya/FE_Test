@@ -25,15 +25,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    // Check authentication status on mount
     const storedToken = localStorage.getItem('token');
     const storedUsername = localStorage.getItem('username');
     const isLoggedIn = localStorage.getItem('isLoggedIn');
 
     if (storedToken && isLoggedIn === 'true') {
-      // Cek apakah token sudah expired
       if (JwtUtils.isTokenExpired(storedToken)) {
-        // Token expired, clear storage dan logout
         localStorage.removeItem('token');
         localStorage.removeItem('username');
         localStorage.removeItem('isLoggedIn');
@@ -42,7 +39,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setToken(null);
         router.push('/login');
       } else {
-        // Token masih valid
         setIsAuthenticated(true);
         setUsername(storedUsername);
         setToken(storedToken);
@@ -53,11 +49,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router]);
 
   useEffect(() => {
-    // Redirect logic - hanya handle redirect dari login ke dashboard
     if (!loading && isAuthenticated && pathname === '/login') {
       router.push('/dashboard');
     }
-    // Private routes akan di-handle oleh private layout guard
   }, [isAuthenticated, loading, pathname, router]);
 
   const login = (newToken: string, newUsername: string) => {
@@ -79,28 +73,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   }, [router]);
 
-  // Simple JWT expiration - set timeout once based on exact expiration time
   useEffect(() => {
     if (!isAuthenticated || !token) return;
 
-    // Get exact expiration time from JWT
     const payload = JwtUtils.decodeToken(token);
     if (!payload) {
       logout();
       return;
     }
 
-    const expirationTime = payload.exp * 1000; // Convert to milliseconds
+    const expirationTime = payload.exp * 1000;
     const now = Date.now();
     const timeUntilExpiration = expirationTime - now;
 
-    // If already expired, logout immediately
     if (timeUntilExpiration <= 0) {
       logout();
       return;
     }
 
-    // Set single timeout to logout exactly when token expires
     const timeoutId = setTimeout(() => {
       logout();
     }, timeUntilExpiration);
@@ -110,7 +100,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [isAuthenticated, token, logout]);
 
-  // Check token saat user kembali ke tab
   useEffect(() => {
     if (!isAuthenticated || !token) return;
 
@@ -138,10 +127,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Memuat...</p>
+      <div className="min-h-screen flex items-center justify-center" >
+        <div className="text-center" >
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto" > </div>
+          <p className="mt-4 text-gray-600" > Memuat...</p>
         </div>
       </div>
     );
@@ -156,7 +145,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       isTokenExpired,
       getTimeUntilExpiration
-    }}>
+    }
+    }>
       {children}
     </AuthContext.Provider>
   );

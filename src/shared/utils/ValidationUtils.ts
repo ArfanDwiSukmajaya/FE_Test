@@ -1,4 +1,3 @@
-// shared/utils/ValidationUtils.ts
 export class ValidationUtils {
   static sanitizeString(input: string): string {
     return input.trim().replace(/[<>]/g, '');

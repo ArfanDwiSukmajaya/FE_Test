@@ -1,4 +1,3 @@
-// infrastructure/repositories/UserRepositoryImpl.ts
 import { UserEntity } from '../../domain/entities/User';
 import { UserRepository, LoginCredentials, LoginResponse } from '../../domain/repositories/UserRepository';
 import { ApiClient } from '../api/ApiClient';
@@ -16,13 +15,12 @@ export class UserRepositoryImpl implements UserRepository {
       }
 
       const user = UserEntity.fromApiResponse({
-        id: 1, // Assuming user ID from response
+        id: 1,
         username: credentials.username,
         token: data.token,
         is_logged_in: data.is_logged_in
       });
 
-      // Store in localStorage
       this.storeUserData(user);
 
       return user;
@@ -33,7 +31,6 @@ export class UserRepositoryImpl implements UserRepository {
 
   async logout(): Promise<void> {
     try {
-      // Clear localStorage
       localStorage.removeItem('token');
       localStorage.removeItem('username');
       localStorage.removeItem('isLoggedIn');

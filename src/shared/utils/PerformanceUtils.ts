@@ -1,4 +1,3 @@
-// shared/utils/PerformanceUtils.ts
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 
 export class PerformanceUtils {
@@ -46,7 +45,6 @@ export class PerformanceUtils {
   }
 }
 
-// React hooks for performance optimization
 export function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
@@ -124,7 +122,6 @@ export function withLazyLoading<T extends React.ComponentType<unknown>>(
   return WrappedComponent;
 }
 
-// Virtual scrolling utilities
 export interface VirtualScrollOptions {
   itemHeight: number;
   containerHeight: number;
@@ -155,7 +152,6 @@ export function useVirtualScroll<T>(
   };
 }
 
-// Image lazy loading
 export function useLazyImage(src: string, placeholder?: string) {
   const [imageSrc, setImageSrc] = useState(placeholder || '');
   const [isLoaded, setIsLoaded] = useState(false);

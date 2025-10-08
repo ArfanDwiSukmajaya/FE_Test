@@ -1,4 +1,3 @@
-
 export interface ApiConfig {
   baseURL: string;
   timeout?: number;
@@ -138,8 +137,8 @@ export class ApiClient {
   }
 }
 
-// Singleton instance
+
 export const apiClient = new ApiClient({
-  baseURL: 'http://localhost:8080/api',
-  timeout: 10000
+  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api',
+  timeout: parseInt(process.env.NEXT_PUBLIC_API_TIMEOUT || '10000')
 });

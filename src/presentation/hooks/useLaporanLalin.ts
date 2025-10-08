@@ -1,9 +1,10 @@
 // presentation/hooks/useLaporanLalin.ts
 import { useState, useCallback, useEffect } from 'react';
 import { DIContainer } from '../../shared/container/DIContainer';
-import type { ProcessedDataRow } from '../components/ui/LaporanTable';
+import type { ProcessedDataRow } from '../components/organisms/LaporanTable';
 import type { ReportFilters } from '../../application/use-cases/ReportUseCase';
 import { PaymentMethod } from '../../domain/value-objects/PaymentMethod';
+import { useDebounce, useMemoizedValue } from '../../shared/utils/PerformanceUtils';
 import toast from 'react-hot-toast';
 
 export type PaymentMethodType = 'Tunai' | 'EToll' | 'Flo' | 'KTP' | 'Keseluruhan' | 'ETF';
@@ -48,9 +49,14 @@ export function useLaporanLalin(): LaporanLalinState & LaporanLalinActions {
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [processedData, setProcessedData] = useState<ProcessedDataRow[]>([]);
+  const [allData, setAllData] = useState<ProcessedDataRow[]>([]); // Data asli tanpa filter
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(0);
+  // const [lastFetchedDate, setLastFetchedDate] = useState<string>(''); // Track tanggal terakhir di-fetch
+
+  // Optimasi: Debounce search input untuk menghindari terlalu banyak filtering
+  const debouncedSearchInput = useDebounce(searchInput, 300); // 300ms delay
 
   const diContainer = DIContainer.getInstance();
   const reportUseCase = diContainer.getReportUseCase();
@@ -62,8 +68,8 @@ export function useLaporanLalin(): LaporanLalinState & LaporanLalinActions {
       setError(null);
 
       const filters: ReportFilters = {
-        tanggal,
-        search: searchInput || undefined
+        tanggal
+        // Tidak mengirim search ke API karena API tidak support
       };
 
       const params = {
@@ -74,8 +80,10 @@ export function useLaporanLalin(): LaporanLalinState & LaporanLalinActions {
       const result = await reportUseCase.getReportData(filters, params);
 
       if (result.success && result.data) {
+        setAllData(result.data.data);
         setProcessedData(result.data.data);
         setTotalPages(result.data.totalPages);
+        // setLastFetchedDate(tanggal);
       } else {
         setError(result.error || 'Failed to fetch data');
         toast.error(result.error || 'Failed to fetch data');
@@ -87,15 +95,42 @@ export function useLaporanLalin(): LaporanLalinState & LaporanLalinActions {
     } finally {
       setLoading(false);
     }
-  }, [tanggal, searchInput, currentPage, limit, reportUseCase]);
+  }, [tanggal, currentPage, limit, reportUseCase]);
 
+  // Client-side filtering untuk search - hanya saat tombol Filter diklik
+  // Optimasi: Memoized search filter dengan debounced input
+  const filteredData = useMemoizedValue(() => {
+    if (!debouncedSearchInput.trim()) {
+      return allData;
+    }
+
+    const searchTerm = debouncedSearchInput.toLowerCase();
+    return allData.filter(item =>
+      item.Ruas.toLowerCase().includes(searchTerm) ||
+      item.Gerbang.toLowerCase().includes(searchTerm)
+    );
+  }, [allData, debouncedSearchInput]);
+
+  // Update processedData ketika filteredData berubah
+  useEffect(() => {
+    setProcessedData(filteredData);
+  }, [filteredData, limit, allData.length, currentPage, totalPages]);
+
+  // Initial data load saat component pertama kali mount
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [fetchData]); // Include fetchData in dependencies
+
+  // Optimasi: Search filter sudah di-handle oleh memoized filteredData
+
+  // Fetch data saat tanggal berubah
+  useEffect(() => {
+    fetchData();
+  }, [tanggal, fetchData]);
 
   const handleFilter = useCallback(() => {
     setCurrentPage(1);
-    fetchData();
+    fetchData(); // Fetch data dengan tanggal yang dipilih
   }, [fetchData]);
 
   const handleReset = useCallback(() => {

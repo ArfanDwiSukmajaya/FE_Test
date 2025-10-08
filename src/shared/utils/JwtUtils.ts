@@ -8,13 +8,11 @@ export interface JwtPayload {
 export class JwtUtils {
   static decodeToken(token: string): JwtPayload | null {
     try {
-      // JWT format: header.payload.signature
       const parts = token.split('.');
       if (parts.length !== 3) {
         return null;
       }
 
-      // Decode base64 payload
       const payload = parts[1];
       const decoded = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
       return JSON.parse(decoded);

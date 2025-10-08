@@ -1,10 +1,9 @@
-// app/(private)/layout.tsx
 "use client";
 
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Sidebar from '@/presentation/components/ui/Sidebar';
-import Header from '@/presentation/components/ui/Header';
+import Sidebar from '@/presentation/components/organisms/Sidebar';
+import Header from '@/presentation/components/organisms/Header';
 import { Toaster } from 'react-hot-toast';
 
 export default function PrivateLayout({
@@ -14,25 +13,30 @@ export default function PrivateLayout({
 }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    // Check authentication immediately
     const token = localStorage.getItem('token');
     const isLoggedIn = localStorage.getItem('isLoggedIn');
 
     if (!token || isLoggedIn !== 'true') {
-      // Tidak authenticated, redirect ke login
       router.push('/login');
     } else {
-      // Authenticated, allow access
       setIsAuthenticated(true);
     }
     setIsChecking(false);
   }, [router, pathname]);
 
-  // Tampilkan loading saat checking authentication
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
+  };
+
   if (isChecking) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -44,19 +48,17 @@ export default function PrivateLayout({
     );
   }
 
-  // Jika tidak authenticated, jangan render apapun (akan redirect)
   if (!isAuthenticated) {
     return null;
   }
 
-  // Jika authenticated, render layout normal
   return (
     <div className="flex h-screen bg-gray-100">
-      <Toaster position="top-right" />
-      <Sidebar />
-      <div className="flex flex-col flex-1">
-        <Header />
-        <main className="flex-1 p-6 overflow-y-auto">
+      <Toaster position="top-center" />
+      <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} />
+      <div className="flex flex-col flex-1 lg:ml-0">
+        <Header onMenuClick={toggleSidebar} isMenuOpen={isSidebarOpen} />
+        <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
           {children}
         </main>
       </div>

@@ -13,9 +13,9 @@ export interface PaginatedResponse<T> {
 }
 
 export interface GerbangRepository {
-  getAll(params: PaginationParams): Promise<PaginatedResponse<GerbangEntity>>;
+  getAll(params: PaginationParams, search?: string): Promise<PaginatedResponse<GerbangEntity>>;
   getById(id: number): Promise<GerbangEntity | null>;
-  create(gerbang: Omit<GerbangEntity, 'id'>): Promise<GerbangEntity>;
+  create(gerbang: GerbangEntity): Promise<GerbangEntity>;
   update(id: number, gerbang: Partial<GerbangEntity>): Promise<GerbangEntity>;
   delete(id: number, IdCabang: number): Promise<void>;
   search(query: string, params: PaginationParams): Promise<PaginatedResponse<GerbangEntity>>;

@@ -2,49 +2,18 @@
 "use client";
 
 import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import toast from 'react-hot-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useLogin } from '@/presentation/hooks/useLogin';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const { login } = useAuth();
+  const { login, loading } = useLogin();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
-    try {
-      const response = await fetch('http://localhost:8080/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.status && data.is_logged_in === 1) {
-        // Gunakan context untuk login
-        login(data.token, username);
-        // Langsung redirect tanpa toast agar tidak menutupi konten
-        router.push('/dashboard');
-      } else {
-        toast.error(data.message || 'Login gagal. Periksa username dan password Anda.');
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      toast.error('Terjadi kesalahan saat login.');
-    } finally {
-      setLoading(false);
-    }
+    // Use DDD architecture - call custom hook
+    await login({ username, password });
   };
 
   return (

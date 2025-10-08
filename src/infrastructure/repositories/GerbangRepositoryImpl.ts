@@ -19,11 +19,16 @@ interface ApiResponse<T> {
 export class GerbangRepositoryImpl implements GerbangRepository {
   constructor(private apiClient: ApiClient) { }
 
-  async getAll(params: PaginationParams): Promise<PaginatedResponse<GerbangEntity>> {
+  async getAll(params: PaginationParams, search?: string): Promise<PaginatedResponse<GerbangEntity>> {
     try {
-      const response = await this.apiClient.get(
-        `/gerbangs?page=${params.page}&limit=${params.limit}`
-      );
+      let url = `/gerbangs?page=${params.page}&limit=${params.limit}`;
+
+      // Add search parameter if provided
+      if (search && search.trim()) {
+        url += `&NamaGerbang=${encodeURIComponent(search.trim())}`;
+      }
+
+      const response = await this.apiClient.get(url);
 
       const data = response.data as ApiResponse<{
         id: number;
@@ -74,9 +79,10 @@ export class GerbangRepositoryImpl implements GerbangRepository {
     }
   }
 
-  async create(gerbang: Omit<GerbangEntity, 'id'>): Promise<GerbangEntity> {
+  async create(gerbang: GerbangEntity): Promise<GerbangEntity> {
     try {
       const response = await this.apiClient.post('/gerbangs/', {
+        id: gerbang.id,
         IdCabang: gerbang.IdCabang,
         NamaGerbang: gerbang.NamaGerbang,
         NamaCabang: gerbang.NamaCabang,
@@ -137,8 +143,6 @@ export class GerbangRepositoryImpl implements GerbangRepository {
 
   async search(query: string, params: PaginationParams): Promise<PaginatedResponse<GerbangEntity>> {
     try {
-      // For now, we'll fetch all data and filter on client side
-      // In a real implementation, this should be done on the server
       const allData = await this.getAll({ page: 1, limit: 1000 });
 
       const filteredData = allData.data.filter(gerbang =>
@@ -146,7 +150,6 @@ export class GerbangRepositoryImpl implements GerbangRepository {
         gerbang.NamaCabang.toLowerCase().includes(query.toLowerCase())
       );
 
-      // Calculate pagination for filtered results
       const startIndex = (params.page - 1) * params.limit;
       const endIndex = startIndex + params.limit;
       const paginatedData = filteredData.slice(startIndex, endIndex);

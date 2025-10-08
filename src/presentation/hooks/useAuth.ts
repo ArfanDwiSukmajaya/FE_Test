@@ -1,4 +1,3 @@
-// presentation/hooks/useAuth.ts
 import { useState, useEffect, useCallback } from 'react';
 import { UserEntity } from '../../domain/entities/User';
 import { DIContainer } from '../../shared/container/DIContainer';
@@ -70,7 +69,6 @@ export function useAuth(): UseAuthReturn {
     }
   }, [authUseCase]);
 
-  // Check authentication status on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {

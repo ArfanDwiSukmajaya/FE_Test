@@ -1,142 +1,173 @@
-// presentation/hooks/useGerbang.ts
-import { useState, useCallback } from 'react';
-import { GerbangEntity } from '../../domain/entities/Gerbang';
-import { DIContainer } from '../../shared/container/DIContainer';
-import { ErrorHandler } from '../../shared/utils/ErrorHandler';
-import { PaginationParams } from '../../domain/repositories/GerbangRepository';
+"use client";
 
-export interface UseGerbangReturn {
-  gerbangs: GerbangEntity[];
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalRecords: number;
-  };
-  isLoading: boolean;
-  error: string | null;
-  fetchGerbangs: (params: PaginationParams, search?: string) => Promise<void>;
-  createGerbang: (data: {
-    IdCabang: number;
-    NamaGerbang: string;
-    NamaCabang: string;
-  }) => Promise<void>;
-  updateGerbang: (id: number, data: Partial<{
-    IdCabang: number;
-    NamaGerbang: string;
-    NamaCabang: string;
-  }>) => Promise<void>;
-  deleteGerbang: (id: number, IdCabang: number) => Promise<void>;
-  clearError: () => void;
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { DIContainer } from '../../shared/container/DIContainer';
+import { GerbangEntity } from '../../domain/entities/Gerbang';
+import { GerbangFormData } from '../../presentation/components/organisms/GerbangModal';
+import { debounce } from '../../shared/utils/DebounceUtils';
+import toast from 'react-hot-toast';
+
+export interface GerbangFilters {
+  search?: string;
+  page?: number;
+  limit?: number;
 }
 
-export function useGerbang(): UseGerbangReturn {
+export function useGerbang() {
   const [gerbangs, setGerbangs] = useState<GerbangEntity[]>([]);
-  const [pagination, setPagination] = useState({
-    currentPage: 1,
-    totalPages: 1,
-    totalRecords: 0
-  });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(5);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [totalItems, setTotalItems] = useState(0);
 
-  const gerbangService = DIContainer.getInstance().getGerbangUseCase();
+  const fetchGerbangs = useCallback(async (page: number = currentPage, pageLimit: number = limit, search: string = searchTerm) => {
+    setLoading(true);
 
-  const clearError = useCallback(() => {
-    setError(null);
-  }, []);
-
-  const fetchGerbangs = useCallback(async (params: PaginationParams, search?: string) => {
     try {
-      setIsLoading(true);
-      setError(null);
+      const gerbangUseCase = DIContainer.getInstance().getGerbangUseCase();
 
-      const filters = search ? { search } : {};
-      const response = await gerbangService.getGerbangs(filters, params);
+      const result = await gerbangUseCase.getGerbangs(
+        { search },
+        { page, limit: pageLimit }
+      );
 
-      setGerbangs(response.data?.data ?? []);
-      setPagination({
-        currentPage: response.data?.current_page ?? 1,
-        totalPages: response.data?.total_pages ?? 1,
-        totalRecords: response.data?.total_records ?? 0
-      });
-    } catch (err) {
-      const appError = ErrorHandler.handleApiError(err);
-      ErrorHandler.logError(appError);
-      setError(ErrorHandler.getUserFriendlyMessage(appError));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [gerbangService]);
-
-  const createGerbang = useCallback(async (data: {
-    IdCabang: number;
-    NamaGerbang: string;
-    NamaCabang: string;
-  }) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const response = await gerbangService.createGerbang(data);
-
-      if (!response.success) {
-        throw new Error(response.error || 'Gagal membuat gerbang');
+      if (result.success && result.data) {
+        setGerbangs(result.data.data);
+        setTotalPages(result.data.total_pages);
+        setCurrentPage(result.data.current_page);
+        setTotalItems(result.data.total_records);
+      } else {
+        toast.error(result.error || 'Gagal mengambil data gerbang');
       }
-    } catch (err) {
-      const appError = ErrorHandler.handleApiError(err);
-      ErrorHandler.logError(appError);
-      setError(ErrorHandler.getUserFriendlyMessage(appError));
-      throw appError;
+    } catch (error) {
+      console.error('Fetch gerbangs error:', error);
+      toast.error('Terjadi kesalahan saat mengambil data gerbang');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [gerbangService]);
+  }, [currentPage, limit, searchTerm]);
 
-  const updateGerbang = useCallback(async (id: number, data: Partial<{
-    IdCabang: number;
-    NamaGerbang: string;
-    NamaCabang: string;
-  }>) => {
+  const createGerbang = useCallback(async (formData: GerbangFormData) => {
     try {
-      setIsLoading(true);
-      setError(null);
+      const gerbangUseCase = DIContainer.getInstance().getGerbangUseCase();
 
-      await gerbangService.updateGerbang(id, data);
-    } catch (err) {
-      const appError = ErrorHandler.handleApiError(err);
-      ErrorHandler.logError(appError);
-      setError(ErrorHandler.getUserFriendlyMessage(appError));
-      throw appError;
-    } finally {
-      setIsLoading(false);
+      const payload = {
+        id: Number(formData.id),
+        IdCabang: Number(formData.IdCabang),
+        NamaGerbang: formData.NamaGerbang,
+        NamaCabang: formData.NamaCabang
+      };
+
+
+      const result = await gerbangUseCase.createGerbang(payload);
+
+      if (result.success) {
+        toast.success('Data berhasil disimpan!');
+        await fetchGerbangs(currentPage, limit);
+        return { success: true };
+      } else {
+        toast.error(result.error || 'Gagal menyimpan data');
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error('Create gerbang error:', error);
+      toast.error('Terjadi kesalahan saat menyimpan data');
+      return { success: false, error: 'Terjadi kesalahan saat menyimpan data' };
     }
-  }, [gerbangService]);
+  }, [fetchGerbangs, currentPage, limit]);
+
+  const updateGerbang = useCallback(async (id: number, formData: GerbangFormData) => {
+    try {
+
+      const gerbangUseCase = DIContainer.getInstance().getGerbangUseCase();
+
+      // Use DDD architecture - call use case
+      const result = await gerbangUseCase.updateGerbang(id, {
+        IdCabang: Number(formData.IdCabang),
+        NamaGerbang: formData.NamaGerbang,
+        NamaCabang: formData.NamaCabang
+      });
+
+      if (result.success) {
+        toast.success('Data berhasil diperbarui!');
+        await fetchGerbangs(currentPage, limit);
+        return { success: true };
+      } else {
+        toast.error(result.error || 'Gagal memperbarui data');
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error('Update gerbang error:', error);
+      toast.error('Terjadi kesalahan saat memperbarui data');
+      return { success: false, error: 'Terjadi kesalahan saat memperbarui data' };
+    }
+  }, [fetchGerbangs, currentPage, limit]);
 
   const deleteGerbang = useCallback(async (id: number, IdCabang: number) => {
     try {
-      setIsLoading(true);
-      setError(null);
+      const gerbangUseCase = DIContainer.getInstance().getGerbangUseCase();
 
-      await gerbangService.deleteGerbang(id, IdCabang);
-    } catch (err) {
-      const appError = ErrorHandler.handleApiError(err);
-      ErrorHandler.logError(appError);
-      setError(ErrorHandler.getUserFriendlyMessage(appError));
-      throw appError;
-    } finally {
-      setIsLoading(false);
+      const result = await gerbangUseCase.deleteGerbang(id, IdCabang);
+
+      if (result.success) {
+        toast.success('Data berhasil dihapus!');
+        await fetchGerbangs(currentPage, limit);
+        return { success: true };
+      } else {
+        toast.error(result.error || 'Gagal menghapus data');
+        return { success: false, error: result.error };
+      }
+    } catch (error) {
+      console.error('Delete gerbang error:', error);
+      toast.error('Terjadi kesalahan saat menghapus data');
+      return { success: false, error: 'Terjadi kesalahan saat menghapus data' };
     }
-  }, [gerbangService]);
+  }, [fetchGerbangs, currentPage, limit]);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
+
+  const handleLimitChange = useCallback((newLimit: number) => {
+    setLimit(newLimit);
+    setCurrentPage(1);
+  }, []);
+
+  const handleSearch = useCallback((search: string) => {
+    setSearchTerm(search);
+    setCurrentPage(1);
+  }, []);
+
+  const debouncedSearch = useMemo(
+    () => debounce((search: unknown) => {
+      setSearchTerm(search as string);
+      setCurrentPage(1);
+    }, 100),
+    []
+  );
+
+  useEffect(() => {
+    fetchGerbangs(currentPage, limit, searchTerm);
+  }, [fetchGerbangs, currentPage, limit, searchTerm]);
 
   return {
     gerbangs,
-    pagination,
-    isLoading,
-    error,
+    loading,
+    currentPage,
+    totalPages,
+    limit,
+    totalItems,
+    searchTerm,
+
     fetchGerbangs,
     createGerbang,
     updateGerbang,
     deleteGerbang,
-    clearError
+    handlePageChange,
+    handleLimitChange,
+    handleSearch,
+    debouncedSearch
   };
 }

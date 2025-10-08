@@ -37,7 +37,7 @@ export default function GerbangModal({ isOpen, onClose, onSave, gerbangData, mod
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'IdCabang' ? Number(value) : value }));
+    setFormData(prev => ({ ...prev, [name]: name === 'IdCabang' || name === 'id' ? Number(value) : value }));
   };
 
   const handleSubmit = (e: FormEvent) => {

@@ -1,4 +1,3 @@
-// application/use-cases/GerbangUseCase.ts
 import { GerbangEntity } from '../../domain/entities/Gerbang';
 import { GerbangRepository, PaginationParams, PaginatedResponse } from '../../domain/repositories/GerbangRepository';
 import { ErrorHandler } from '../../shared/utils/ErrorHandler';
@@ -14,6 +13,9 @@ export interface GerbangFilters {
   search?: string;
 }
 
+const MIN_NAME_LENGTH = 3;
+const MIN_ID_VALUE = 1;
+
 export class GerbangUseCase {
   constructor(private gerbangRepository: GerbangRepository) { }
 
@@ -22,50 +24,29 @@ export class GerbangUseCase {
     pagination: PaginationParams
   ): Promise<GerbangUseCaseResult<PaginatedResponse<GerbangEntity>>> {
     try {
-      // Sanitize search input
-      if (filters.search) {
-        filters.search = ValidationUtils.sanitizeString(filters.search);
+      let searchTerm = filters.search;
+      if (searchTerm) {
+        searchTerm = ValidationUtils.sanitizeString(searchTerm);
       }
 
-      const result = await this.gerbangRepository.getAll(pagination);
-
-      // Apply search filter if provided
-      if (filters.search) {
-        const filteredData = result.data.filter(gerbang =>
-          gerbang.NamaGerbang.toLowerCase().includes(filters.search!.toLowerCase()) ||
-          gerbang.NamaCabang.toLowerCase().includes(filters.search!.toLowerCase())
-        );
-
-        return {
-          success: true,
-          data: {
-            ...result,
-            data: filteredData
-          }
-        };
-      }
+      const result = await this.gerbangRepository.getAll(pagination, searchTerm);
 
       return {
         success: true,
         data: result
       };
     } catch (error) {
-      const appError = ErrorHandler.handleApiError(error);
-      ErrorHandler.logError(appError);
-
-      return {
-        success: false,
-        error: ErrorHandler.getUserFriendlyMessage(appError)
-      };
+      return this.handleError(error);
     }
   }
 
   async getGerbangById(id: number): Promise<GerbangUseCaseResult<GerbangEntity>> {
     try {
-      if (!id || id <= 0) {
+      const idError = this.validateId(id, 'ID Gerbang');
+      if (idError) {
         return {
           success: false,
-          error: 'ID Gerbang tidak valid'
+          error: idError
         };
       }
 
@@ -83,23 +64,17 @@ export class GerbangUseCase {
         data: gerbang
       };
     } catch (error) {
-      const appError = ErrorHandler.handleApiError(error);
-      ErrorHandler.logError(appError);
-
-      return {
-        success: false,
-        error: ErrorHandler.getUserFriendlyMessage(appError)
-      };
+      return this.handleError(error);
     }
   }
 
   async createGerbang(gerbangData: {
+    id: number;
     IdCabang: number;
     NamaGerbang: string;
     NamaCabang: string;
   }): Promise<GerbangUseCaseResult<GerbangEntity>> {
     try {
-      // Validate input
       const validationErrors = this.validateGerbangData(gerbangData);
       if (validationErrors.length > 0) {
         return {
@@ -108,16 +83,15 @@ export class GerbangUseCase {
         };
       }
 
-      // Sanitize input
       const sanitizedData = {
+        id: gerbangData.id,
         IdCabang: gerbangData.IdCabang,
         NamaGerbang: ValidationUtils.sanitizeString(gerbangData.NamaGerbang),
         NamaCabang: ValidationUtils.sanitizeString(gerbangData.NamaCabang)
       };
 
-      const gerbang = GerbangEntity.create(0, sanitizedData.IdCabang, sanitizedData.NamaGerbang, sanitizedData.NamaCabang);
+      const gerbang = GerbangEntity.create(sanitizedData.id, sanitizedData.IdCabang, sanitizedData.NamaGerbang, sanitizedData.NamaCabang);
 
-      // Additional validation
       const entityValidationErrors = gerbang.validate();
       if (entityValidationErrors.length > 0) {
         return {
@@ -133,13 +107,7 @@ export class GerbangUseCase {
         data: createdGerbang
       };
     } catch (error) {
-      const appError = ErrorHandler.handleApiError(error);
-      ErrorHandler.logError(appError);
-
-      return {
-        success: false,
-        error: ErrorHandler.getUserFriendlyMessage(appError)
-      };
+      return this.handleError(error);
     }
   }
 
@@ -152,14 +120,28 @@ export class GerbangUseCase {
     }>
   ): Promise<GerbangUseCaseResult<GerbangEntity>> {
     try {
-      if (!id || id <= 0) {
+      const idError = this.validateId(id, 'ID Gerbang');
+      if (idError) {
         return {
           success: false,
-          error: 'ID Gerbang tidak valid'
+          error: idError
         };
       }
 
-      // Sanitize input
+      const validationData = {
+        IdCabang: gerbangData.IdCabang || 0,
+        NamaGerbang: gerbangData.NamaGerbang || '',
+        NamaCabang: gerbangData.NamaCabang || ''
+      };
+
+      const validationErrors = this.validateGerbangData(validationData);
+      if (validationErrors.length > 0) {
+        return {
+          success: false,
+          error: validationErrors.join(', ')
+        };
+      }
+
       const sanitizedData = { ...gerbangData };
       if (sanitizedData.NamaGerbang) {
         sanitizedData.NamaGerbang = ValidationUtils.sanitizeString(sanitizedData.NamaGerbang);
@@ -175,29 +157,25 @@ export class GerbangUseCase {
         data: updatedGerbang
       };
     } catch (error) {
-      const appError = ErrorHandler.handleApiError(error);
-      ErrorHandler.logError(appError);
-
-      return {
-        success: false,
-        error: ErrorHandler.getUserFriendlyMessage(appError)
-      };
+      return this.handleError(error);
     }
   }
 
   async deleteGerbang(id: number, IdCabang: number): Promise<GerbangUseCaseResult<void>> {
     try {
-      if (!id || id <= 0) {
+      const idError = this.validateId(id, 'ID Gerbang');
+      if (idError) {
         return {
           success: false,
-          error: 'ID Gerbang tidak valid'
+          error: idError
         };
       }
 
-      if (!IdCabang || IdCabang <= 0) {
+      const cabangIdError = this.validateId(IdCabang, 'ID Cabang');
+      if (cabangIdError) {
         return {
           success: false,
-          error: 'ID Cabang tidak valid'
+          error: cabangIdError
         };
       }
 
@@ -207,14 +185,37 @@ export class GerbangUseCase {
         success: true
       };
     } catch (error) {
-      const appError = ErrorHandler.handleApiError(error);
-      ErrorHandler.logError(appError);
-
-      return {
-        success: false,
-        error: ErrorHandler.getUserFriendlyMessage(appError)
-      };
+      return this.handleError(error);
     }
+  }
+
+  private handleError(error: unknown): GerbangUseCaseResult<never> {
+    const appError = ErrorHandler.handleApiError(error);
+    ErrorHandler.logError(appError);
+
+    return {
+      success: false,
+      error: ErrorHandler.getUserFriendlyMessage(appError)
+    };
+  }
+
+  private validateId(id: number, fieldName: string = 'ID'): string | null {
+    if (!id || id < MIN_ID_VALUE) {
+      return `${fieldName} tidak valid`;
+    }
+    return null;
+  }
+
+  private validateNameField(value: string, fieldName: string): string[] {
+    const errors: string[] = [];
+
+    if (!value || value.trim().length === 0) {
+      errors.push(`${fieldName} tidak boleh kosong`);
+    } else if (value.length < MIN_NAME_LENGTH) {
+      errors.push(`${fieldName} minimal ${MIN_NAME_LENGTH} karakter`);
+    }
+
+    return errors;
   }
 
   private validateGerbangData(data: {
@@ -224,24 +225,11 @@ export class GerbangUseCase {
   }): string[] {
     const errors: string[] = [];
 
-    if (!data.NamaGerbang || data.NamaGerbang.trim().length === 0) {
-      errors.push('Nama Gerbang tidak boleh kosong');
-    }
+    errors.push(...this.validateNameField(data.NamaGerbang, 'Nama Gerbang'));
+    errors.push(...this.validateNameField(data.NamaCabang, 'Nama Cabang'));
 
-    if (!data.NamaCabang || data.NamaCabang.trim().length === 0) {
-      errors.push('Nama Cabang tidak boleh kosong');
-    }
-
-    if (data.IdCabang <= 0) {
+    if (data.IdCabang < MIN_ID_VALUE) {
       errors.push('ID Cabang harus lebih dari 0');
-    }
-
-    if (data.NamaGerbang && data.NamaGerbang.length < 3) {
-      errors.push('Nama Gerbang minimal 3 karakter');
-    }
-
-    if (data.NamaCabang && data.NamaCabang.length < 3) {
-      errors.push('Nama Cabang minimal 3 karakter');
     }
 
     return errors;

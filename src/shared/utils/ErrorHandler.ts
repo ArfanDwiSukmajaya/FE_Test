@@ -1,4 +1,3 @@
-// shared/utils/ErrorHandler.ts
 export interface AppError {
   code: string;
   message: string;
@@ -18,7 +17,6 @@ export class ErrorHandler {
 
   static handleApiError(error: unknown): AppError {
     if (error && typeof error === 'object' && 'response' in error) {
-      // Server responded with error status
       return this.createError(
         'API_ERROR',
         (error as { response?: { data?: { message?: string } } }).response?.data?.message || 'Server error occurred',
@@ -28,14 +26,12 @@ export class ErrorHandler {
         }
       );
     } else if (error && typeof error === 'object' && 'request' in error) {
-      // Request was made but no response received
       return this.createError(
         'NETWORK_ERROR',
         'Network error - please check your connection',
         { originalError: (error as { message?: string }).message }
       );
     } else {
-      // Something else happened
       return this.createError(
         'UNKNOWN_ERROR',
         (error as { message?: string }).message || 'An unknown error occurred',
