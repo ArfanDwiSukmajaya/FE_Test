@@ -145,15 +145,24 @@ export class ReportUseCase {
         head: [headers],
         body: tableData,
         startY: 40,
-        styles: { fontSize: 8, cellPadding: 2 },
+        margin: { left: 10, right: 10 },
+        styles: { fontSize: 7, cellPadding: 1.5 },
         headStyles: { fillColor: [66, 139, 202], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [245, 245, 245] },
         columnStyles: {
-          0: { cellWidth: 15 }, 1: { cellWidth: 30 }, 2: { cellWidth: 30 },
-          3: { cellWidth: 20 }, 4: { cellWidth: 20 }, 5: { cellWidth: 25 },
-          6: { cellWidth: 30 }, 7: { cellWidth: 20 }, 8: { cellWidth: 20 },
-          9: { cellWidth: 20 }, 10: { cellWidth: 20 }, 11: { cellWidth: 20 },
-          12: { cellWidth: 25 }
+          0: { cellWidth: 12 },  // No
+          1: { cellWidth: 35 },  // Ruas
+          2: { cellWidth: 35 },  // Gerbang
+          3: { cellWidth: 15 },  // Gardu
+          4: { cellWidth: 18 },  // Hari
+          5: { cellWidth: 20 },  // Tanggal
+          6: { cellWidth: 25 },  // Metode Pembayaran
+          7: { cellWidth: 15 },  // Gol I
+          8: { cellWidth: 15 },  // Gol II
+          9: { cellWidth: 20 },  // Gol III
+          10: { cellWidth: 20 }, // Gol IV
+          11: { cellWidth: 20 }, // Gol V
+          12: { cellWidth: 20 }  // Total Lalin
         }
       });
 
